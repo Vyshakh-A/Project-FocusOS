@@ -22,3 +22,23 @@ export const getTaskService = async (userId) => {
 
   return tasks;
 };
+
+export const updateTaskService = async (userId, taskId, updateData) => {
+  const task = await Task.findOneAndUpdate(
+    { _id: taskId, user: userId },
+    updateData,
+    { new: true }
+  );
+
+  if (!task) throw new AppError("Task not found or unauthorized", 404);
+
+  return task;
+};
+
+export const deleteTaskService = async (userId, taskId) => {
+  const task = await Task.findOneAndDelete({ _id: taskId, user: userId });
+
+  if (!task) throw new AppError("Task not found or unauthorized", 404);
+
+  return task;
+};
