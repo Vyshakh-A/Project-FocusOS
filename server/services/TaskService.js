@@ -15,17 +15,58 @@ export const createTaskService = async (userId, taskData) => {
   return task;
 };
 
-export const getTaskService = async (userId) => {
+export const getTaskService = async (userId, page, limit, filters) => {
   if (!userId) throw new AppError("Unauthorized", 401);
 
-  const tasks = await Task.find({ user: userId }).sort({ createdAt: -1 });
+  if (page < 1 || limit < 1) {
+    throw new AppError("Invalid pagination values", 400);
+  }
+  const query = { user: userId, isDeleted: false };
 
-  return tasks;
+  // ✅ Filtering
+  if (filters.completed !== undefined) {
+    query.completed = filters.completed === "true";
+  }
+
+  if (filters.important !== undefined) {
+    query.important = filters.important === "true";
+  }
+
+  if (filters.search) {
+    query.title = {
+      $regex: filters.search,
+      $options: "i", // case-insensitive
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const totalTasks = await Task.countDocuments({
+    user: userId,
+    isDeleted: false,
+  });
+
+  const tasks = await Task.find({ user: userId, isDeleted: false })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalPages = Math.ceil(totalTasks / limit);
+
+  return {
+    tasks,
+    totalTasks,
+    totalPages,
+    currentPage: page,
+    limit,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  };
 };
 
 export const updateTaskService = async (userId, taskId, updateData) => {
   const task = await Task.findOneAndUpdate(
-    { _id: taskId, user: userId },
+    { _id: taskId, user: userId, isDeleted: false },
     updateData,
     { new: true }
   );
@@ -36,9 +77,16 @@ export const updateTaskService = async (userId, taskId, updateData) => {
 };
 
 export const deleteTaskService = async (userId, taskId) => {
-  const task = await Task.findOneAndDelete({ _id: taskId, user: userId });
+  const task = await Task.findOne({ _id: taskId, isDeleted: false });
 
-  if (!task) throw new AppError("Task not found or unauthorized", 404);
+  if (!task) {
+    throw new AppError("Task not found", 404);
+  }
 
-  return task;
+  if (task.user.toString() !== userId.toString()) {
+    throw new AppError("Forbidden", 403);
+  }
+
+  task.isDeleted = true;
+  await task.save();
 };

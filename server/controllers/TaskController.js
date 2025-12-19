@@ -1,3 +1,4 @@
+import { compare } from "bcryptjs";
 import {
   createTaskService,
   getTaskService,
@@ -25,7 +26,16 @@ export const getTask = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const tasks = await getTaskService(userId);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const filters = {
+      completed: req.query.completed,
+      important: req.query.important,
+      search: req.query.search,
+    }
+
+    const tasks = await getTaskService(userId, page, limit, filters);
 
     res.status(200).json({
       message: "Task retrived successfully",
@@ -58,12 +68,9 @@ export const deleteTask = async (req, res, next) => {
     const userId = req.user.id;
     const taskId = req.params.id;
 
-    const deletedTask = await deleteTaskService(userId, taskId);
+    await deleteTaskService(userId, taskId);
 
-    res.status(200).json({
-      message: "Task deleted successfully",
-      deletedTask,
-    });
+    res.status(204).send();
   } catch (e) {
     next(e);
   }
