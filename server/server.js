@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import AuthRoutes from "./routers/AuthRouter.js"
 import errorHandler from "./middleware/errorMiddleware.js";
 import taskRoute from "./routers/TaskRouter.js";
+import NoteRouter from "./routers/NoteRouter.js";
 
 dotenv.config();
 connectDB();
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/auth", AuthRoutes);
 app.use("/api/tasks", taskRoute);
+app.use("/api/notes", NoteRouter);
 
 app.get("/", (req, res) => {
   res.send("API is running");
