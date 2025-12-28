@@ -105,3 +105,7 @@ If you want me to run any git commands from this environment, confirm which acti
 ---
 
 Short, clear, and ready — ask me to push this README to the remote or to perform the safe `.env` removal now.
+
+
+
+FocusOS intentionally does not embed a judge or IDE. Users solve problems in their preferred environment (LeetCode, local IDE, etc.), and FocusOS tracks structured attempts, consistency, and learning signals. This keeps the system lightweight while still providing meaningful analytics.
