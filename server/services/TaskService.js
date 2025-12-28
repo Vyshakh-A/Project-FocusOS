@@ -41,12 +41,9 @@ export const getTaskService = async (userId, page, limit, filters) => {
 
   const skip = (page - 1) * limit;
 
-  const totalTasks = await Task.countDocuments({
-    user: userId,
-    isDeleted: false,
-  });
+  const totalTasks = await Task.countDocuments(query);
 
-  const tasks = await Task.find({ user: userId, isDeleted: false })
+  const tasks = await Task.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
