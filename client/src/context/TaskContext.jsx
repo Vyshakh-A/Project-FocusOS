@@ -1,5 +1,10 @@
 import { createContext, useContext, useState } from "react";
-import { fetchTasks, updateTask, createTask } from "../services/taskApi";
+import {
+  fetchTasks,
+  updateTask,
+  createTask,
+  deleteTask,
+} from "../services/taskApi";
 import dayjs from "dayjs";
 
 const TaskContext = createContext();
@@ -15,9 +20,19 @@ export const TaskProvider = ({ children }) => {
       setLoading(true);
       const todayStart = dayjs().startOf("day");
 
-      const res = await fetchTasks({ page: 1, limit: 50 });
+      let allTasks = [];
+      let page = 1;
+      let hasNextPage = true;
 
-      const allTasks = res.data.tasks.tasks;
+      while (hasNextPage) {
+        const res = await fetchTasks({ page, limit: 100 });
+
+        const tasksData = res.data.tasks;
+        allTasks = allTasks.concat(tasksData.tasks);
+
+        hasNextPage = tasksData.hasNextPage;
+        page++;
+      }
 
       const todayTasks = allTasks.filter((t) =>
         dayjs(t.createdAt).isAfter(todayStart)
@@ -27,6 +42,39 @@ export const TaskProvider = ({ children }) => {
       todayTasks.sort((a, b) => b.important - a.important);
 
       setTasks(todayTasks);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ---------- LOAD ALL TASKS ---------- */
+  const loadAllTasks = async () => {
+    try {
+      setLoading(true);
+      let allTasks = [];
+      let page = 1;
+      let hasNextPage = true;
+
+      while (hasNextPage) {
+        const res = await fetchTasks({ page, limit: 100 });
+
+        const tasksData = res.data.tasks;
+        allTasks = allTasks.concat(tasksData.tasks);
+
+        hasNextPage = tasksData.hasNextPage;
+        page++;
+      }
+
+      // Sort by important first, then by createdAt desc
+      allTasks.sort(
+        (a, b) =>
+          b.important - a.important ||
+          new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      setTasks(allTasks);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load tasks");
     } finally {
@@ -63,6 +111,18 @@ export const TaskProvider = ({ children }) => {
     }
   };
 
+  /* ---------- DELETE TASK ---------- */
+  const removeTask = async (taskId) => {
+    const prev = [...tasks];
+    setTasks((ts) => ts.filter((t) => t._id !== taskId));
+
+    try {
+      await deleteTask(taskId);
+    } catch {
+      setTasks(prev);
+    }
+  };
+
   return (
     <TaskContext.Provider
       value={{
@@ -70,8 +130,10 @@ export const TaskProvider = ({ children }) => {
         loading,
         error,
         loadTodayTasks,
+        loadAllTasks,
         createTask: createNewTask,
         toggleComplete,
+        deleteTask: removeTask,
       }}
     >
       {children}
