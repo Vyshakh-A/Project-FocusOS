@@ -1,6 +1,6 @@
-# FocusOS — Task Management App
+# FocusOS – Personal Productivity Dashboard
 
-This repository contains a task-management application split into a backend (Node/Express + MongoDB) and a frontend (React + Vite).
+This repository contains a Productivity Dashboard application split into a backend (Node/Express + MongoDB) and a frontend (React + Vite).
 
 ## Repository layout
 
